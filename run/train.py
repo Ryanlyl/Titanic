@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import argparse
 import json
@@ -10,7 +10,9 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+import joblib
 import pandas as pd
+import sklearn
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import StratifiedKFold
 
@@ -132,12 +134,17 @@ def main() -> None:
 
     metrics = {
         "model_type": config.get("model_type", "sklearn"),
-        "estimator_name": config.get("estimator_name", "random_forest"),
+        "estimator_name": config.get("estimator_name", "logistic_regression"),
         "cv_accuracy_mean": round(float(cv_mean_accuracy), 6),
         "cv_accuracy_std": round(float(cv_std_accuracy), 6),
         "num_folds": int(len(fold_metrics)),
         "fold_metrics": fold_metrics,
         "num_full_training_rows": int(len(features)),
+        "library_versions": {
+            "scikit_learn": sklearn.__version__,
+            "pandas": pd.__version__,
+            "joblib": joblib.__version__,
+        },
     }
     args.metrics_output.write_text(
         json.dumps(metrics, indent=2, ensure_ascii=False),
@@ -150,6 +157,7 @@ def main() -> None:
     print(f"CV accuracy std: {cv_std_accuracy:.4f}")
     print(f"Saved model to: {args.model_output}")
     print(f"Saved metrics to: {args.metrics_output}")
+    print(f"Training environment scikit-learn version: {sklearn.__version__}")
 
 
 if __name__ == "__main__":

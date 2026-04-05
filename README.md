@@ -47,7 +47,7 @@ Titanic/
 ## Default Workflow
 
 1. Build processed datasets with `python run/prepare_data.py`.
-2. Configure an experiment in `configs/baseline.json`. The default baseline uses a random forest on a curated feature set: core structured raw columns plus engineered features, excluding `PassengerId`, `Name`, `Ticket`, and `Cabin`.
+2. Configure an experiment in `configs/`. `baseline.json` keeps the logistic-regression baseline, and `random_forest.json` provides a stronger tree-based alternative on the same curated feature set.
 3. Train a model with `python run/train.py` to run cross-validation and save a final checkpoint fit on all labeled rows.
 4. Generate a submission with `python run/predict.py`.
 
@@ -57,6 +57,7 @@ Titanic/
 pip install -r requirements.txt
 python run/prepare_data.py
 python run/train.py --config configs/baseline.json
+python run/train.py --config configs/random_forest.json --model-output artifacts/checkpoints/random_forest.joblib --metrics-output results/metrics/random_forest_metrics.json
 python run/predict.py --model-path artifacts/checkpoints/baseline.joblib
 ```
 
@@ -71,3 +72,4 @@ python run/predict.py --model-path artifacts/checkpoints/baseline.joblib
 - The default training workflow uses 5-fold stratified cross-validation configured in `configs/baseline.json`.
 - Per-fold metrics plus the mean and standard deviation are written to `results/metrics/`.
 - After cross-validation, the training script refits the model on the full training table before saving the checkpoint used for submission generation.
+- scikit-learn joblib checkpoints are version-specific in practice. If you upgrade scikit-learn, retrain the model before running `python run/predict.py`.

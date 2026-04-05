@@ -20,7 +20,7 @@ class TitanicSklearnModel(BaseTitanicModel):
 
     def __init__(
         self,
-        estimator_name: str = "random_forest",
+        estimator_name: str = "logistic_regression",
         estimator_params: dict[str, Any] | None = None,
     ) -> None:
         self.estimator_name = estimator_name
