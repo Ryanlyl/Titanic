@@ -14,22 +14,6 @@ from features import ensure_engineered_features
 
 from .base import BaseTitanicModel
 
-NUMERIC_FEATURES = [
-    "Pclass",
-    "Age",
-    "SibSp",
-    "Parch",
-    "Fare",
-    "FamilySize",
-    "IsAlone",
-]
-CATEGORICAL_FEATURES = [
-    "Sex",
-    "Embarked",
-    "TitleGroup",
-    "CabinDeck",
-]
-
 
 class TitanicSklearnModel(BaseTitanicModel):
     """A simple sklearn baseline built on the shared processed feature table."""
@@ -41,7 +25,10 @@ class TitanicSklearnModel(BaseTitanicModel):
     ) -> None:
         self.estimator_name = estimator_name
         self.estimator_params = estimator_params or {}
-        self.pipeline = self._build_pipeline()
+        self.pipeline: Pipeline | None = None
+        self.numeric_features_: list[str] = []
+        self.categorical_features_: list[str] = []
+        self.feature_columns_: list[str] = []
 
     def _build_estimator(self) -> Any:
         if self.estimator_name == "logistic_regression":
@@ -61,26 +48,44 @@ class TitanicSklearnModel(BaseTitanicModel):
 
         raise ValueError(f"Unsupported estimator_name: {self.estimator_name}")
 
-    def _build_pipeline(self) -> Pipeline:
-        numeric_pipeline = Pipeline(
-            steps=[
-                ("imputer", SimpleImputer(strategy="median")),
-                ("scaler", StandardScaler()),
-            ]
-        )
-        categorical_pipeline = Pipeline(
-            steps=[
-                ("imputer", SimpleImputer(strategy="most_frequent")),
-                ("encoder", OneHotEncoder(handle_unknown="ignore")),
-            ]
-        )
+    def _infer_feature_columns(self, features: pd.DataFrame) -> tuple[list[str], list[str]]:
+        numeric_features = features.select_dtypes(include=["number", "bool"]).columns.tolist()
+        categorical_features = [
+            column for column in features.columns if column not in numeric_features
+        ]
+        return numeric_features, categorical_features
 
-        preprocessor = ColumnTransformer(
-            transformers=[
-                ("numeric", numeric_pipeline, NUMERIC_FEATURES),
-                ("categorical", categorical_pipeline, CATEGORICAL_FEATURES),
-            ]
-        )
+    def _build_pipeline(
+        self,
+        numeric_features: list[str],
+        categorical_features: list[str],
+    ) -> Pipeline:
+        transformers: list[tuple[str, Any, list[str]]] = []
+
+        if numeric_features:
+            numeric_pipeline = Pipeline(
+                steps=[
+                    ("imputer", SimpleImputer(strategy="median")),
+                    ("scaler", StandardScaler()),
+                ]
+            )
+            transformers.append(("numeric", numeric_pipeline, numeric_features))
+
+        if categorical_features:
+            categorical_pipeline = Pipeline(
+                steps=[
+                    ("imputer", SimpleImputer(strategy="most_frequent")),
+                    ("encoder", OneHotEncoder(handle_unknown="ignore")),
+                ]
+            )
+            transformers.append(
+                ("categorical", categorical_pipeline, categorical_features)
+            )
+
+        if not transformers:
+            raise ValueError("No feature columns available for training.")
+
+        preprocessor = ColumnTransformer(transformers=transformers)
 
         return Pipeline(
             steps=[
@@ -95,9 +100,28 @@ class TitanicSklearnModel(BaseTitanicModel):
 
     def fit(self, features: pd.DataFrame, targets: pd.Series) -> "TitanicSklearnModel":
         prepared = self.prepare_features(features)
-        self.pipeline.fit(prepared, targets)
+        self.numeric_features_, self.categorical_features_ = self._infer_feature_columns(
+            prepared
+        )
+        self.feature_columns_ = prepared.columns.tolist()
+        self.pipeline = self._build_pipeline(
+            numeric_features=self.numeric_features_,
+            categorical_features=self.categorical_features_,
+        )
+        self.pipeline.fit(prepared.loc[:, self.feature_columns_], targets)
         return self
 
     def predict(self, features: pd.DataFrame) -> Any:
+        if self.pipeline is None:
+            raise ValueError("Model has not been fitted yet.")
+
         prepared = self.prepare_features(features)
-        return self.pipeline.predict(prepared)
+        missing_columns = [
+            column for column in self.feature_columns_ if column not in prepared.columns
+        ]
+        if missing_columns:
+            missing = ", ".join(missing_columns)
+            raise ValueError(f"Prediction data is missing required feature columns: {missing}")
+
+        # Keep the prediction table aligned with the exact train-time schema.
+        return self.pipeline.predict(prepared.loc[:, self.feature_columns_])
