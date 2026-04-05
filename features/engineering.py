@@ -6,6 +6,15 @@ from pathlib import Path
 import pandas as pd
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+BASE_MODEL_FEATURE_COLUMNS = [
+    "Pclass",
+    "Sex",
+    "Age",
+    "SibSp",
+    "Parch",
+    "Fare",
+    "Embarked",
+]
 ENGINEERED_FEATURE_COLUMNS = [
     "Title",
     "TitleGroup",
@@ -19,6 +28,7 @@ ENGINEERED_FEATURE_COLUMNS = [
     "AgeMissing",
     "FareMissing",
 ]
+MODEL_FEATURE_COLUMNS = BASE_MODEL_FEATURE_COLUMNS + ENGINEERED_FEATURE_COLUMNS
 
 _TITLE_NORMALIZATION = {
     "Mlle": "Miss",
@@ -105,6 +115,14 @@ def ensure_engineered_features(data: pd.DataFrame) -> pd.DataFrame:
     if has_engineered_features(data):
         return data.copy()
     return engineer_features(data)
+
+
+def select_model_features(data: pd.DataFrame) -> pd.DataFrame:
+    missing_columns = [column for column in MODEL_FEATURE_COLUMNS if column not in data.columns]
+    if missing_columns:
+        missing = ", ".join(missing_columns)
+        raise ValueError(f"Cannot build model features without columns: {missing}")
+    return data.loc[:, MODEL_FEATURE_COLUMNS].copy()
 
 
 def build_processed_datasets(

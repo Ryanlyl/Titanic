@@ -132,7 +132,7 @@ def main() -> None:
 
     metrics = {
         "model_type": config.get("model_type", "sklearn"),
-        "estimator_name": config.get("estimator_name", "logistic_regression"),
+        "estimator_name": config.get("estimator_name", "random_forest"),
         "cv_accuracy_mean": round(float(cv_mean_accuracy), 6),
         "cv_accuracy_std": round(float(cv_std_accuracy), 6),
         "num_folds": int(len(fold_metrics)),

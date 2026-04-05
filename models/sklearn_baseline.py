@@ -10,17 +10,17 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
-from features import ensure_engineered_features
+from features import ensure_engineered_features, select_model_features
 
 from .base import BaseTitanicModel
 
 
 class TitanicSklearnModel(BaseTitanicModel):
-    """A simple sklearn baseline built on the shared processed feature table."""
+    """A sklearn baseline built on a curated Titanic feature table."""
 
     def __init__(
         self,
-        estimator_name: str = "logistic_regression",
+        estimator_name: str = "random_forest",
         estimator_params: dict[str, Any] | None = None,
     ) -> None:
         self.estimator_name = estimator_name
@@ -40,7 +40,11 @@ class TitanicSklearnModel(BaseTitanicModel):
 
         if self.estimator_name == "random_forest":
             default_params = {
-                "n_estimators": 300,
+                "n_estimators": 400,
+                "max_depth": 10,
+                "min_samples_leaf": 2,
+                "min_samples_split": 4,
+                "n_jobs": 1,
                 "random_state": 42,
             }
             default_params.update(self.estimator_params)
@@ -63,12 +67,13 @@ class TitanicSklearnModel(BaseTitanicModel):
         transformers: list[tuple[str, Any, list[str]]] = []
 
         if numeric_features:
-            numeric_pipeline = Pipeline(
-                steps=[
-                    ("imputer", SimpleImputer(strategy="median")),
-                    ("scaler", StandardScaler()),
-                ]
-            )
+            numeric_steps: list[tuple[str, Any]] = [
+                ("imputer", SimpleImputer(strategy="median"))
+            ]
+            if self.estimator_name == "logistic_regression":
+                numeric_steps.append(("scaler", StandardScaler()))
+
+            numeric_pipeline = Pipeline(steps=numeric_steps)
             transformers.append(("numeric", numeric_pipeline, numeric_features))
 
         if categorical_features:
@@ -96,7 +101,8 @@ class TitanicSklearnModel(BaseTitanicModel):
 
     @staticmethod
     def prepare_features(features: pd.DataFrame) -> pd.DataFrame:
-        return ensure_engineered_features(features)
+        prepared = ensure_engineered_features(features)
+        return select_model_features(prepared)
 
     def fit(self, features: pd.DataFrame, targets: pd.Series) -> "TitanicSklearnModel":
         prepared = self.prepare_features(features)

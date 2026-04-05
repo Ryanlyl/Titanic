@@ -47,7 +47,7 @@ Titanic/
 ## Default Workflow
 
 1. Build processed datasets with `python run/prepare_data.py`.
-2. Configure an experiment in `configs/baseline.json`.
+2. Configure an experiment in `configs/baseline.json`. The default baseline uses a random forest on a curated feature set: core structured raw columns plus engineered features, excluding `PassengerId`, `Name`, `Ticket`, and `Cabin`.
 3. Train a model with `python run/train.py` to run cross-validation and save a final checkpoint fit on all labeled rows.
 4. Generate a submission with `python run/predict.py`.
 

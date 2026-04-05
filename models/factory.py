@@ -10,10 +10,9 @@ def build_model(config: dict[str, Any]) -> TitanicSklearnModel:
     if model_type != "sklearn":
         raise ValueError(f"Unsupported model_type: {model_type}")
 
-    estimator_name = config.get("estimator_name", "logistic_regression")
+    estimator_name = config.get("estimator_name", "random_forest")
     estimator_params = config.get("estimator_params", {})
     return TitanicSklearnModel(
         estimator_name=estimator_name,
         estimator_params=estimator_params,
     )
-
