@@ -1,0 +1,13 @@
+{
+  "model_type": "sklearn",
+  "estimator_name": "logistic_regression",
+  "estimator_params": {
+    "max_iter": 1000,
+    "solver": "lbfgs"
+  },
+  "validation": {
+    "test_size": 0.2,
+    "random_state": 42
+  }
+}
+
