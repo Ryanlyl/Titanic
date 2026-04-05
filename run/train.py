@@ -76,15 +76,20 @@ def main() -> None:
         stratify=targets,
     )
 
-    model = build_model(config)
-    model.fit(x_train, y_train)
+    validation_model = build_model(config)
+    validation_model.fit(x_train, y_train)
 
-    val_predictions = model.predict(x_val)
+    val_predictions = validation_model.predict(x_val)
     accuracy = accuracy_score(y_val, val_predictions)
+
+    # Refit on the full labeled dataset so the saved checkpoint uses all
+    # available supervision while keeping the validation estimate above.
+    final_model = build_model(config)
+    final_model.fit(features, targets)
 
     args.model_output.parent.mkdir(parents=True, exist_ok=True)
     args.metrics_output.parent.mkdir(parents=True, exist_ok=True)
-    model.save(args.model_output)
+    final_model.save(args.model_output)
 
     metrics = {
         "model_type": config.get("model_type", "sklearn"),
@@ -92,6 +97,7 @@ def main() -> None:
         "validation_accuracy": round(float(accuracy), 6),
         "num_train_rows": int(len(x_train)),
         "num_validation_rows": int(len(x_val)),
+        "num_full_training_rows": int(len(features)),
     }
     args.metrics_output.write_text(
         json.dumps(metrics, indent=2, ensure_ascii=False),
