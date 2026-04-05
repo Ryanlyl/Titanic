@@ -10,6 +10,8 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
+from features import ensure_engineered_features
+
 from .base import BaseTitanicModel
 
 NUMERIC_FEATURES = [
@@ -24,25 +26,13 @@ NUMERIC_FEATURES = [
 CATEGORICAL_FEATURES = [
     "Sex",
     "Embarked",
-    "Title",
+    "TitleGroup",
     "CabinDeck",
 ]
 
 
-def _extract_title(name_series: pd.Series) -> pd.Series:
-    return (
-        name_series.fillna("")
-        .str.extract(r",\s*([^\.]+)\.", expand=False)
-        .fillna("Unknown")
-    )
-
-
-def _extract_cabin_deck(cabin_series: pd.Series) -> pd.Series:
-    return cabin_series.fillna("U").astype(str).str[0]
-
-
 class TitanicSklearnModel(BaseTitanicModel):
-    """A simple sklearn baseline with lightweight feature engineering."""
+    """A simple sklearn baseline built on the shared processed feature table."""
 
     def __init__(
         self,
@@ -101,14 +91,7 @@ class TitanicSklearnModel(BaseTitanicModel):
 
     @staticmethod
     def prepare_features(features: pd.DataFrame) -> pd.DataFrame:
-        prepared = features.copy()
-        prepared["Title"] = _extract_title(prepared["Name"])
-        prepared["FamilySize"] = (
-            prepared["SibSp"].fillna(0) + prepared["Parch"].fillna(0) + 1
-        )
-        prepared["IsAlone"] = (prepared["FamilySize"] == 1).astype(int)
-        prepared["CabinDeck"] = _extract_cabin_deck(prepared["Cabin"])
-        return prepared
+        return ensure_engineered_features(features)
 
     def fit(self, features: pd.DataFrame, targets: pd.Series) -> "TitanicSklearnModel":
         prepared = self.prepare_features(features)
@@ -118,4 +101,3 @@ class TitanicSklearnModel(BaseTitanicModel):
     def predict(self, features: pd.DataFrame) -> Any:
         prepared = self.prepare_features(features)
         return self.pipeline.predict(prepared)
-

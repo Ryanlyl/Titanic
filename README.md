@@ -46,14 +46,16 @@ Titanic/
 
 ## Default Workflow
 
-1. Configure an experiment in `configs/baseline.json`.
-2. Train a model with `python run/train.py`.
-3. Generate a submission with `python run/predict.py`.
+1. Build processed datasets with `python run/prepare_data.py`.
+2. Configure an experiment in `configs/baseline.json`.
+3. Train a model with `python run/train.py`.
+4. Generate a submission with `python run/predict.py`.
 
 ## Quick Start
 
 ```bash
 pip install -r requirements.txt
+python run/prepare_data.py
 python run/train.py --config configs/baseline.json
 python run/predict.py --model-path artifacts/checkpoints/baseline.joblib
 ```

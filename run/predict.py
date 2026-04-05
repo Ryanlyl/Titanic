@@ -24,8 +24,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--test-path",
         type=Path,
-        default=PROJECT_ROOT / "data" / "raw" / "test.csv",
-        help="Path to the Titanic test CSV.",
+        default=PROJECT_ROOT / "data" / "processed" / "test.csv",
+        help="Path to the Titanic test CSV. Defaults to processed data.",
     )
     parser.add_argument(
         "--output-path",
@@ -38,6 +38,14 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
+
+    if not args.test_path.exists():
+        raise FileNotFoundError(
+            "Test data not found at "
+            f"{args.test_path}. Run `python run/prepare_data.py` first, "
+            "or pass --test-path."
+        )
+
     test_data = pd.read_csv(args.test_path)
     model = BaseTitanicModel.load(args.model_path)
 
@@ -56,4 +64,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

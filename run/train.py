@@ -27,8 +27,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--train-path",
         type=Path,
-        default=PROJECT_ROOT / "data" / "raw" / "train.csv",
-        help="Path to the Titanic training CSV.",
+        default=PROJECT_ROOT / "data" / "processed" / "train.csv",
+        help="Path to the Titanic training CSV. Defaults to processed data.",
     )
     parser.add_argument(
         "--model-output",
@@ -52,6 +52,13 @@ def load_config(path: Path) -> dict:
 def main() -> None:
     args = parse_args()
     config = load_config(args.config)
+
+    if not args.train_path.exists():
+        raise FileNotFoundError(
+            "Training data not found at "
+            f"{args.train_path}. Run `python run/prepare_data.py` first, "
+            "or pass --train-path."
+        )
 
     data = pd.read_csv(args.train_path)
     if "Survived" not in data.columns:
@@ -98,4 +105,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
