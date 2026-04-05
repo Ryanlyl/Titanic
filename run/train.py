@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import argparse
 import json
@@ -24,7 +24,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--config",
         type=Path,
-        default=PROJECT_ROOT / "configs" / "baseline.json",
+        default=PROJECT_ROOT / "configs" / "gradient_boosting.json",
         help="Path to the JSON config file.",
     )
     parser.add_argument(
@@ -36,13 +36,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--model-output",
         type=Path,
-        default=PROJECT_ROOT / "artifacts" / "checkpoints" / "baseline.joblib",
+        default=PROJECT_ROOT / "artifacts" / "checkpoints" / "gradient_boosting.joblib",
         help="Where to store the trained model.",
     )
     parser.add_argument(
         "--metrics-output",
         type=Path,
-        default=PROJECT_ROOT / "results" / "metrics" / "baseline_metrics.json",
+        default=PROJECT_ROOT / "results" / "metrics" / "gradient_boosting_metrics.json",
         help="Where to store validation metrics.",
     )
     return parser.parse_args()

@@ -7,29 +7,34 @@ Kaggle Titanic survival prediction starter repository. The project is organized 
 ```text
 Titanic/
 |-- artifacts/
-|   |-- checkpoints/          # Serialized trained models
-|   `-- logs/                 # Local and Slurm logs
+|   |-- checkpoints/               # Serialized trained models
+|   `-- logs/                      # Local and Slurm logs
 |-- cluster/
-|   `-- train_baseline.slurm  # Slurm template for cluster runs
+|   `-- train_baseline.slurm       # Slurm template for cluster runs
 |-- configs/
-|   `-- baseline.json         # Baseline experiment config
+|   |-- baseline.json              # Logistic-regression baseline config
+|   |-- random_forest.json         # Bagged-tree baseline config
+|   `-- gradient_boosting.json     # Stronger boosting config
 |-- data/
-|   |-- processed/            # Cleaned or feature-engineered datasets
-|   `-- raw/                  # Raw Kaggle data
+|   |-- processed/                 # Cleaned or feature-engineered datasets
+|   `-- raw/                       # Raw Kaggle data
 |       |-- gender_submission.csv
 |       |-- test.csv
 |       `-- train.csv
+|-- features/
+|   `-- engineering.py             # Shared feature engineering helpers
 |-- models/
 |   |-- __init__.py
-|   |-- base.py               # Shared model interface
-|   |-- factory.py            # Central model builder
-|   `-- sklearn_baseline.py   # sklearn baseline implementation
+|   |-- base.py                    # Shared model interface
+|   |-- factory.py                 # Central model builder
+|   `-- sklearn_baseline.py        # sklearn model implementations
 |-- results/
-|   |-- metrics/              # Validation metrics and summaries
-|   `-- submissions/          # CSV files ready for Kaggle submission
+|   |-- metrics/                   # Validation metrics and summaries
+|   `-- submissions/               # CSV files ready for Kaggle submission
 |-- run/
-|   |-- predict.py            # Prediction and submission entrypoint
-|   `-- train.py              # Training entrypoint
+|   |-- predict.py                 # Prediction and submission entrypoint
+|   |-- prepare_data.py            # Feature-preparation entrypoint
+|   `-- train.py                   # Training entrypoint
 |-- .gitignore
 `-- requirements.txt
 ```
@@ -47,7 +52,7 @@ Titanic/
 ## Default Workflow
 
 1. Build processed datasets with `python run/prepare_data.py`.
-2. Configure an experiment in `configs/`. `baseline.json` keeps the logistic-regression baseline, and `random_forest.json` provides a stronger tree-based alternative on the same curated feature set.
+2. Choose an experiment config in `configs/`. `baseline.json` keeps the logistic-regression baseline, `random_forest.json` remains a solid tree ensemble, and `gradient_boosting.json` is the current score-oriented recommendation on the curated feature set.
 3. Train a model with `python run/train.py` to run cross-validation and save a final checkpoint fit on all labeled rows.
 4. Generate a submission with `python run/predict.py`.
 
@@ -58,7 +63,8 @@ pip install -r requirements.txt
 python run/prepare_data.py
 python run/train.py --config configs/baseline.json
 python run/train.py --config configs/random_forest.json --model-output artifacts/checkpoints/random_forest.joblib --metrics-output results/metrics/random_forest_metrics.json
-python run/predict.py --model-path artifacts/checkpoints/baseline.joblib
+python run/train.py --config configs/gradient_boosting.json --model-output artifacts/checkpoints/gradient_boosting.joblib --metrics-output results/metrics/gradient_boosting_metrics.json
+python run/predict.py --model-path artifacts/checkpoints/gradient_boosting.joblib --output-path results/submissions/gradient_boosting_submission.csv
 ```
 
 ## Extension Notes
@@ -69,7 +75,8 @@ python run/predict.py --model-path artifacts/checkpoints/baseline.joblib
 
 ## Validation
 
-- The default training workflow uses 5-fold stratified cross-validation configured in `configs/baseline.json`.
+- All bundled experiment configs use 5-fold stratified cross-validation.
+- `configs/gradient_boosting.json` is currently the strongest bundled option from the latest local validation sweep on this repository.
 - Per-fold metrics plus the mean and standard deviation are written to `results/metrics/`.
 - After cross-validation, the training script refits the model on the full training table before saving the checkpoint used for submission generation.
 - scikit-learn joblib checkpoints are version-specific in practice. If you upgrade scikit-learn, retrain the model before running `python run/predict.py`.

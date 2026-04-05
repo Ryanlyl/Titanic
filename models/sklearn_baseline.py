@@ -4,7 +4,7 @@ from typing import Any
 
 import pandas as pd
 from sklearn.compose import ColumnTransformer
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
@@ -49,6 +49,16 @@ class TitanicSklearnModel(BaseTitanicModel):
             }
             default_params.update(self.estimator_params)
             return RandomForestClassifier(**default_params)
+
+        if self.estimator_name == "gradient_boosting":
+            default_params = {
+                "n_estimators": 100,
+                "learning_rate": 0.1,
+                "max_depth": 3,
+                "random_state": 42,
+            }
+            default_params.update(self.estimator_params)
+            return GradientBoostingClassifier(**default_params)
 
         raise ValueError(f"Unsupported estimator_name: {self.estimator_name}")
 
@@ -131,3 +141,4 @@ class TitanicSklearnModel(BaseTitanicModel):
 
         # Keep the prediction table aligned with the exact train-time schema.
         return self.pipeline.predict(prepared.loc[:, self.feature_columns_])
+
